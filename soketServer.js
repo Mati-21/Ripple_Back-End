@@ -26,9 +26,8 @@ export const socketHandler = (socket, io) => {
 
   // logout
   socket.on("logout", (userId) => {
-    console.log("dilutional");
     onlineUsers = onlineUsers.filter(
-      (u) => !(u.userId === userId && u.socketId === socket.id)
+      (u) => !(u.userId === userId && u.socketId === socket.id),
     );
 
     // notify frontend

@@ -13,18 +13,25 @@ export const create_open_chat = async (req, res, next) => {
   try {
     const { receiver_id, isGroup } = req.body;
     const sender_id = req.userId;
-    if (isGroup === false) {
+
+    const isGroupChat =
+      isGroup === true || (typeof isGroup === "string" && isGroup.length > 5);
+
+    if (!isGroupChat) {
       if (!receiver_id) {
-        throw createHttpError("Oops something went wrong");
+        throw createHttpError.BadRequest("Receiver ID is required");
       }
 
       const chatExist = await checkChatExist(sender_id, receiver_id, false);
 
       if (chatExist) {
         const cleanedChat = await chatCleaner(chatExist._id, sender_id);
-        res.status(200).json(cleanedChat);
+        return res.status(200).json(cleanedChat);
       } else {
         const user = await UserModel.findById(receiver_id);
+        if (!user) {
+          throw createHttpError.NotFound("User not found");
+        }
 
         let newChatData = {
           name: user.name,
@@ -36,19 +43,16 @@ export const create_open_chat = async (req, res, next) => {
         };
 
         const newChat = await ChatModel.create(newChatData);
-
         const populatedChat = await chatCleaner(newChat._id, sender_id);
-
-        res.status(200).json(populatedChat);
+        return res.status(200).json(populatedChat);
       }
     } else {
-      //its agroup
-      // check if the group exist
+      // It's a group
       const groupChatExist = await checkChatExist("", "", isGroup);
-      res.status(200).json(groupChatExist);
+      return res.status(200).json(groupChatExist);
     }
   } catch (error) {
-    console.log("%00 error");
+    console.error("create_open_chat error:", error);
     next(error);
   }
 };
